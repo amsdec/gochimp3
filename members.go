@@ -52,8 +52,13 @@ type Member struct {
 	LastChanged   string          `json:"last_changed"`
 	EmailClient   string          `json:"email_client"`
 	LastNote      MemberNoteShort `json:"last_note"`
-
+	Tags          []TagsResponse  `json:"tags,omitempty"`
 	api *API
+}
+
+type TagsResponse struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (mem Member) CanMakeRequest() error {
