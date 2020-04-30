@@ -14,6 +14,8 @@ const (
 
 	member_notes_path       = single_member_path + "/notes"
 	single_member_note_path = member_notes_path + "/%s"
+
+	member_tags_path = single_member_path + "/tags"
 )
 
 type ListOfMembers struct {
@@ -35,7 +37,7 @@ type MemberRequest struct {
 	Location        *MemberLocation        `json:"location,omitempty"`
 	IPOpt           string                 `json:"ip_opt,omitempty"`
 	IPSignup        string                 `json:"ip_signup,omitempty"`
-  Tags            []string               `json:"tags,omitempty"`
+	Tags            []string               `json:"tags,omitempty"`
 	TimestampSignup string                 `json:"timestamp_signup,omitempty"`
 	TimestampOpt    string                 `json:"timestamp_opt,omitempty"`
 }
@@ -53,7 +55,7 @@ type Member struct {
 	EmailClient   string          `json:"email_client"`
 	LastNote      MemberNoteShort `json:"last_note"`
 	Tags          []TagsResponse  `json:"tags,omitempty"`
-	api *API
+	api           *API
 }
 
 type TagsResponse struct {
@@ -322,4 +324,33 @@ func (mem Member) DeleteNote(id string) (bool, error) {
 
 	endpoint := fmt.Sprintf(single_member_note_path, mem.ListID, mem.ID, id)
 	return mem.api.RequestOk("DELETE", endpoint)
+}
+
+// ------------------------------------------------------------------------------------------------
+// TAGS
+// ------------------------------------------------------------------------------------------------
+
+type TagRequest struct {
+	Name   string           `json:"name"`
+	Status TagRequestStatus `json:"status"`
+}
+
+// OrderStatus defines all possible status for temporal orders
+type TagRequestStatus string
+
+// Catalog for order status
+const (
+	TagRequestStatusInactive TagRequestStatus = "inactive"
+	TagRequestStatusActive   TagRequestStatus = "active"
+)
+
+func (mem Member) UpdateTags(tags []TagRequest) (*MemberNoteLong, error) {
+	if err := mem.CanMakeRequest(); err != nil {
+		return nil, err
+	}
+
+	endpoint := fmt.Sprintf(member_tags_path, mem.ListID, mem.ID)
+	response := new(MemberNoteLong)
+
+	return response, mem.api.Request("POST", endpoint, nil, &tags, response)
 }
