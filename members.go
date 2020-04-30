@@ -344,13 +344,16 @@ const (
 	TagRequestStatusActive   TagRequestStatus = "active"
 )
 
-func (mem Member) UpdateTags(tags []TagRequest) (*MemberNoteLong, error) {
+func (mem Member) UpdateTags(tags []TagRequest) error {
 	if err := mem.CanMakeRequest(); err != nil {
-		return nil, err
+		return err
 	}
 
 	endpoint := fmt.Sprintf(member_tags_path, mem.ListID, mem.ID)
-	response := new(MemberNoteLong)
 
-	return response, mem.api.Request("POST", endpoint, nil, &tags, response)
+	body := struct{ Tags []TagRequest }{
+		Tags: tags,
+	}
+
+	return mem.api.Request("POST", endpoint, nil, &body, nil)
 }
