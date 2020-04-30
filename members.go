@@ -351,8 +351,8 @@ func (mem Member) UpdateTags(tags []TagRequest) error {
 
 	endpoint := fmt.Sprintf(member_tags_path, mem.ListID, mem.ID)
 
-	body := struct{ Tags []TagRequest }{
-		Tags: tags,
+	body := struct{ tags []TagRequest }{
+		tags: tags,
 	}
 
 	return mem.api.Request("POST", endpoint, nil, &body, nil)
