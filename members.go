@@ -330,6 +330,7 @@ func (mem Member) DeleteNote(id string) (bool, error) {
 // TAGS
 // ------------------------------------------------------------------------------------------------
 
+// TagsRequest holds ...
 type TagsRequest struct {
 	Tags []TagRequest `json:"tags"`
 }
