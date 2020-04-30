@@ -330,6 +330,10 @@ func (mem Member) DeleteNote(id string) (bool, error) {
 // TAGS
 // ------------------------------------------------------------------------------------------------
 
+type TagsRequest struct {
+	Tags []TagRequest `json:"tags"`
+}
+
 type TagRequest struct {
 	Name   string           `json:"name"`
 	Status TagRequestStatus `json:"status"`
@@ -351,8 +355,8 @@ func (mem Member) UpdateTags(tags []TagRequest) error {
 
 	endpoint := fmt.Sprintf(member_tags_path, mem.ListID, mem.ID)
 
-	body := struct{ tags []TagRequest }{
-		tags: tags,
+	body := &TagsRequest{
+		Tags: tags,
 	}
 
 	return mem.api.Request("POST", endpoint, nil, &body, nil)
