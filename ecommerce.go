@@ -478,7 +478,7 @@ func (store Store) GetProducts(params *ExtendedQueryParams) (*ProductList, error
 	if store.HasError() {
 		return nil, fmt.Errorf("The store has an error, can't process request")
 	}
-	endpoint := fmt.Sprintf(carts_path, store.ID)
+	endpoint := fmt.Sprintf(products_path, store.ID)
 	err := store.api.Request("GET", endpoint, params, nil, response)
 	if err != nil {
 		return nil, err
@@ -500,7 +500,7 @@ func (store Store) GetProduct(id string, params *BasicQueryParams) (*Product, er
 	res.api = store.api
 	res.StoreID = store.ID
 
-	endpoint := fmt.Sprintf(cart_path, store.ID, id)
+	endpoint := fmt.Sprintf(product_path, store.ID, id)
 	err := store.api.Request("GET", endpoint, params, nil, res)
 	if err != nil {
 		return nil, err
