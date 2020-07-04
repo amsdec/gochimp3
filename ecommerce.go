@@ -16,11 +16,14 @@ const (
 	cart_path  = "/ecommerce/stores/%s/carts/%s"
 	carts_path = "/ecommerce/stores/%s/carts"
 
-	line_path  = "/ecommerce/stores/%s/carts/%s/lines/%s"
-	lines_path = "/ecommerce/stores/%s/carts/%s/lines"
+	cart_line_path  = "/ecommerce/stores/%s/carts/%s/lines/%s"
+	cart_lines_path = "/ecommerce/stores/%s/carts/%s/lines"
 
 	order_path  = "/ecommerce/stores/%s/orders/%s"
 	orders_path = "/ecommerce/stores/%s/orders"
+
+	order_line_path  = "/ecommerce/stores/%s/orders/%s/lines/%s"
+	order_lines_path = "/ecommerce/stores/%s/orders/%s/lines"
 
 	product_path  = "/ecommerce/stores/%s/products/%s"
 	products_path = "/ecommerce/stores/%s/products"
@@ -372,7 +375,7 @@ func (cart Cart) CreateLine(req *LineItem) (*LineItem, error) {
 		return nil, err
 	}
 
-	endpoint := fmt.Sprintf(lines_path, cart.StoreID, cart.ID)
+	endpoint := fmt.Sprintf(cart_lines_path, cart.StoreID, cart.ID)
 	res := new(LineItem)
 	res.api = cart.api
 
@@ -384,7 +387,7 @@ func (cart Cart) UpdateLine(req *LineItem) (*LineItem, error) {
 		return nil, err
 	}
 
-	endpoint := fmt.Sprintf(line_path, cart.StoreID, cart.ID, req.ID)
+	endpoint := fmt.Sprintf(cart_line_path, cart.StoreID, cart.ID, req.ID)
 	res := new(LineItem)
 	res.api = cart.api
 
@@ -396,7 +399,7 @@ func (cart Cart) DeleteLine(id string) (bool, error) {
 		return false, err
 	}
 
-	endpoint := fmt.Sprintf(line_path, cart.StoreID, cart.ID, id)
+	endpoint := fmt.Sprintf(cart_line_path, cart.StoreID, cart.ID, id)
 	return cart.api.RequestOk("DELETE", endpoint)
 }
 
@@ -407,13 +410,17 @@ func (cart Cart) DeleteLine(id string) (bool, error) {
 type OrderList struct {
 	APIError
 
-	Orders     []Order `json:"cart"`
+	Orders     []Order `json:"orders"`
 	TotalItems int     `json:"total_items"`
 	Links      []Link  `json:"_links,omitempty"`
 }
 
 type Order struct {
 	APIError
+
+	StoreID string `json:"-"`
+
+	api *API
 
 	// Required
 	ID           string     `json:"id"`
@@ -442,13 +449,21 @@ type Order struct {
 	Links     []Link    `json:"_links,omitempty"`
 }
 
+func (order Order) HasID() error {
+	if order.ID == "" || order.StoreID == "" {
+		return errors.New("No ID provided on order")
+	}
+
+	return nil
+}
+
 func (store Store) GetOrders(params *ExtendedQueryParams) (*OrderList, error) {
 	response := new(OrderList)
 
 	if store.HasError() {
 		return nil, fmt.Errorf("The store has an error, can't process request")
 	}
-	endpoint := fmt.Sprintf(carts_path, store.ID)
+	endpoint := fmt.Sprintf(orders_path, store.ID)
 	err := store.api.Request("GET", endpoint, params, nil, response)
 	if err != nil {
 		return nil, err
@@ -463,6 +478,8 @@ func (store Store) GetOrder(id string, params *BasicQueryParams) (*Order, error)
 	}
 
 	response := new(Order)
+	response.api = store.api
+	response.StoreID = store.ID
 
 	if store.HasError() {
 		return nil, fmt.Errorf("The store has an error, can't process request")
@@ -484,6 +501,8 @@ func (store Store) CreateOrder(req *Order) (*Order, error) {
 
 	endpoint := fmt.Sprintf(orders_path, store.ID)
 	res := new(Order)
+	res.api = store.api
+	res.StoreID = store.ID
 
 	return res, store.api.Request("POST", endpoint, nil, req, res)
 }
@@ -495,6 +514,8 @@ func (store Store) UpdateOrder(req *Order) (*Order, error) {
 
 	endpoint := fmt.Sprintf(order_path, store.ID, req.ID)
 	res := new(Order)
+	res.api = store.api
+	res.StoreID = store.ID
 
 	return res, store.api.Request("PATCH", endpoint, nil, req, res)
 }
@@ -510,6 +531,69 @@ func (store Store) DeleteOrder(id string) (bool, error) {
 
 	endpoint := fmt.Sprintf(order_path, store.ID, id)
 	return store.api.RequestOk("DELETE", endpoint)
+}
+
+// OrderLineItem defines a mailchimp order line item
+type OrderLineItem struct {
+	APIError
+
+	api     *API
+	StoreID string `json:"-"`
+	OrderID string `json:"-"`
+
+	// Required
+	ID               string  `json:"id"`
+	ProductID        string  `json:"product_id"`
+	ProductVariantID string  `json:"product_variant_id"`
+	Quantity         int     `json:"quantity"`
+	Price            float64 `json:"price"`
+
+	// Optional
+	ProductTitle        string `json:"product_title,omitempty"`
+	ProductVariantTitle string `json:"product_variant_title,omitempty"`
+}
+
+type OrderLineItemList struct {
+	APIError
+
+	StoreID    string     `json:"store_id"`
+	OrderID    string     `json:"order_id"`
+	Lines      []LineItem `json:"lines"`
+	TotalItems int        `json:"total_items"`
+	Links      []Link     `json:"_links,omitempty"`
+}
+
+func (order Order) CreateLine(req *LineItem) (*LineItem, error) {
+	if err := order.HasID(); err != nil {
+		return nil, err
+	}
+
+	endpoint := fmt.Sprintf(order_lines_path, order.StoreID, order.ID)
+	res := new(LineItem)
+	res.api = order.api
+
+	return res, order.api.Request("POST", endpoint, nil, req, res)
+}
+
+func (order Order) UpdateLine(req *LineItem) (*LineItem, error) {
+	if err := order.HasID(); err != nil {
+		return nil, err
+	}
+
+	endpoint := fmt.Sprintf(order_line_path, order.StoreID, order.ID, req.ID)
+	res := new(LineItem)
+	res.api = order.api
+
+	return res, order.api.Request("PATCH", endpoint, nil, req, res)
+}
+
+func (order Order) DeleteLine(id string) (bool, error) {
+	if err := order.HasID(); err != nil {
+		return false, err
+	}
+
+	endpoint := fmt.Sprintf(order_line_path, order.StoreID, order.ID, id)
+	return order.api.RequestOk("DELETE", endpoint)
 }
 
 // ------------------------------------------------------------------------------------------------
