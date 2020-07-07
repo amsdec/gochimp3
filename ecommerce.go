@@ -56,6 +56,7 @@ type Store struct {
 	Timezone      string   `json:"timezone,omitempty"`
 	Phone         string   `json:"phone,omitempty"`
 	Address       *Address `json:"address,omitempty"`
+	IsSyncing     bool     `json:"is_syncing,omitempty"`
 
 	// Response
 	CreatedAt time.Time `json:"created_at,omitempty"`
